@@ -1,0 +1,1 @@
+Repo containing various attempts at writing machine learning model without library
