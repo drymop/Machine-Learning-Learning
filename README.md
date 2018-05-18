@@ -1,1 +1,1 @@
-Repo containing various attempts at writing machine learning model without library
+Basic feed foward back propagation neural net
