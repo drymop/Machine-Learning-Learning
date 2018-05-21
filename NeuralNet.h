@@ -2,7 +2,9 @@
 #define NEURAL_NET_H_
 
 #include <cmath>
+#include <fstream>
 #include <random>
+#include <string>
 #include <vector>
 
 #include <iomanip>
@@ -15,14 +17,20 @@ class NeuralNet
     /// @param _layer_sizes the size of each layer, in 
     NeuralNet(std::vector<int> _layer_sizes);
 
+    /// @brief import a neural net from file
+    /// @param _file_name name of file
+    NeuralNet(const std::string _file_name);
+
     std::vector<double> predict(const std::vector<double>& _inputs);
 
-    void train(const std::vector<std::vector<double>>& _batch_inputs, 
-               const std::vector<std::vector<double>>& _batch_outputs, 
-               double _learning_rate = 0.1);
+    double train(const std::vector<std::vector<double>>& _batch_inputs, 
+                 const std::vector<std::vector<double>>& _batch_outputs, 
+                 double _learning_rate = 0.01);
+
+    bool exportToFile(const std::string _file_name) const;
 
   private:
-    const std::vector<int> m_layer_sizes;
+    std::vector<int> m_layer_sizes;
 
     /// activations[layer][neuron]
     std::vector<std::vector<double>> m_activations;

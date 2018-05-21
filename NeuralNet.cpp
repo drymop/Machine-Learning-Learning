@@ -24,8 +24,7 @@ NeuralNet(vector<int> _layer_sizes)
   // random intialize weights and biases
   
   // using a gaussian normal distribution of mean = 0, stddev = sqrt(2/fan-in)
-  std::random_device rd;
-  std::mt19937 mt(rd());
+  std::mt19937 mt(std::rand());
   std::normal_distribution<double> dist(0, 1);
 
   // weights
@@ -75,6 +74,96 @@ NeuralNet(vector<int> _layer_sizes)
 }
 
 
+NeuralNet::
+NeuralNet(const std::string _file_name)
+{
+  std::ifstream ifs(_file_name);
+
+  //---------------
+  // import layer sizes
+  int num_layers;
+  ifs >> num_layers;
+
+  m_layer_sizes.reserve(num_layers);
+  for (int i = 0; i < num_layers; i++)
+  {
+    int layer_size;
+    ifs >> layer_size;
+    m_layer_sizes.push_back(layer_size);
+  }
+
+  //---------------
+  // reserve space for sums and activations
+
+  m_sums.reserve(m_layer_sizes.size());  
+  m_sums.emplace_back();
+  for (int i = 1; i < m_layer_sizes.size(); i++)
+    m_sums.emplace_back( m_layer_sizes[i] );
+
+  m_activations.reserve(m_layer_sizes.size());  
+  for (int i = 0; i < m_layer_sizes.size(); i++)
+    m_activations.emplace_back( m_layer_sizes[i] );
+  
+  //---------------
+  // import weights and biases
+  
+  // weights
+  m_weights.reserve(m_layer_sizes.size() - 1);
+  for (int i = 0; i < m_layer_sizes.size() - 1; i++)
+  {
+    m_weights.emplace_back();
+    m_weights[i].reserve(m_layer_sizes[i]);
+    for (int j = 0; j < m_layer_sizes[i]; j++)
+    {
+      m_weights[i].emplace_back();
+      m_weights[i][j].reserve(m_layer_sizes[i+1]);
+      for (int k = 0; k < m_layer_sizes[i+1]; k++)
+      {
+        double weight;
+        ifs >> weight;
+        m_weights[i][j].push_back(weight);
+      }
+    }
+  }
+
+  // biases
+  m_biases.reserve(m_layer_sizes.size());
+  m_biases.emplace_back(); // 0th layer does not have bias
+  for (int i = 1; i < m_layer_sizes.size(); i++)
+  {
+    m_biases.emplace_back();
+    m_biases[i].reserve(m_layer_sizes[i]);
+    for (int j = 0; j < m_layer_sizes[i]; j++)
+    {
+      double bias;
+      ifs >> bias;
+      m_biases[i].push_back(bias);
+    }
+  }
+
+  //---------------
+  // reserve space for sum, weight and bias corrections
+  
+  // weights
+  m_weight_correction_accumulations.reserve(m_layer_sizes.size() - 1);
+  for (int i = 0; i < m_layer_sizes.size() - 1; i++)
+    m_weight_correction_accumulations.emplace_back( 
+        m_layer_sizes[i], vector<double>(m_layer_sizes[i+1]) );
+
+  // biases
+  m_bias_correction_accumulations.reserve(m_layer_sizes.size());
+  m_bias_correction_accumulations.emplace_back(); // 0th layer doesn't have bias
+  for (int i = 1; i < m_layer_sizes.size(); i++)
+    m_bias_correction_accumulations.emplace_back(m_layer_sizes[i]);
+
+  // sums
+  m_sum_corrections.reserve(m_layer_sizes.size());
+  m_sum_corrections.emplace_back(); // 0th layer doesn't have sum
+  for (int i = 1; i < m_layer_sizes.size(); i++)
+    m_sum_corrections.emplace_back(m_layer_sizes[i]);
+}
+
+
 vector<double>
 NeuralNet::
 predict(const vector<double>& _inputs)
@@ -84,7 +173,7 @@ predict(const vector<double>& _inputs)
 }
 
 
-void 
+double 
 NeuralNet::
 train(const std::vector<std::vector<double>>& _batch_inputs, 
       const std::vector<std::vector<double>>& _batch_outputs,
@@ -115,7 +204,6 @@ train(const std::vector<std::vector<double>>& _batch_inputs,
     }
   }
   avg_cost = avg_cost/n_trainings;
-  cout << avg_cost << "," << endl;
 
   // perform correction
   double step = _learning_rate;// / n_trainings;
@@ -129,6 +217,8 @@ train(const std::vector<std::vector<double>>& _batch_inputs,
     for (int j = 0; j < m_biases[i].size(); j++)
       m_biases[i][j] +=
           m_bias_correction_accumulations[i][j] * step;
+
+  return avg_cost;
 }
 
 
@@ -228,4 +318,35 @@ NeuralNet::
 sigmoid_derivation(double sigmoid_x)
 {
   return sigmoid_x * (1 - sigmoid_x);
+}
+
+
+bool
+NeuralNet::
+exportToFile(const std::string _file_name) const
+{
+  std::ofstream ofs(_file_name);
+  if (!ofs.is_open())
+    return false;
+
+  static std::string separator = " ";
+  ofs.precision(17);
+  
+  // export layer sizes
+  ofs << m_layer_sizes.size() << separator;
+  for (auto size : m_layer_sizes)
+    ofs << size << separator;
+
+  // export weights
+  for (auto& i : m_weights)
+    for (auto& j : i)
+      for (auto& k : j)
+        ofs << k << separator;
+
+  // export biases
+  for (auto& i : m_biases)
+    for (auto& j : i)
+      ofs << j << separator;
+
+  return true;
 }
