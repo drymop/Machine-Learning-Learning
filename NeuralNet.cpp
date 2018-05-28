@@ -3,7 +3,6 @@
 using std::vector;
 using std::cout; using std::endl;
 
-
 NeuralNet::
 NeuralNet(vector<int> _layer_sizes)
     : m_layer_sizes ( _layer_sizes )
@@ -175,8 +174,8 @@ predict(const vector<double>& _inputs)
 
 double 
 NeuralNet::
-train(const std::vector<std::vector<double>>& _batch_inputs, 
-      const std::vector<std::vector<double>>& _batch_outputs,
+train(const vector<vector<double>>& _batch_inputs, 
+      const vector<vector<double>>& _batch_outputs,
       double _learning_rate)
 {
   // zero out the accumulations
@@ -219,6 +218,60 @@ train(const std::vector<std::vector<double>>& _batch_inputs,
           m_bias_correction_accumulations[i][j] * step;
 
   return avg_cost;
+}
+
+
+double 
+NeuralNet::
+train(const vector<double>& _inputs, 
+      const vector<double>& _outputs,
+      double _learning_rate,
+      double _regularization_rate)
+{
+  double cost = 0;
+
+  // zero out the accumulations, add regularization
+  for (int i = 0; i < m_weight_correction_accumulations.size(); i++)
+    for (int j = 0; j < m_weight_correction_accumulations[i].size(); j++)
+      for (int k = 0; k < m_weight_correction_accumulations[i][j].size(); k++)
+      {
+        m_weight_correction_accumulations[i][j][k] = L1_derivation(m_weights[i][j][k], _regularization_rate);
+        cost += std::abs(m_weights[i][j][k]);
+      }
+
+  for (int i = 0; i < m_bias_correction_accumulations.size(); i++)
+    for (int j = 0; j < m_bias_correction_accumulations[i].size(); j++)
+    {
+      m_bias_correction_accumulations[i][j] = L1_derivation(m_biases[i][j], _regularization_rate);
+      cost += std::abs(m_biases[i][j]);
+    }
+
+  cost *= _regularization_rate;
+
+  // train
+  feedFoward   (_inputs);
+  backPropagate(_outputs);
+  // calculate cost
+  for (int i = 0; i < m_layer_sizes.back(); i++)
+  {
+    double diff = m_activations.back()[i] - _outputs[i];
+    cost += diff * diff;
+  }
+
+  // perform correction
+  double step = _learning_rate;
+  for (int i = 0; i < m_weights.size(); i++)
+    for (int j = 0; j < m_weights[i].size(); j++)
+      for (int k = 0; k < m_weights[i][j].size(); k++)
+        m_weights[i][j][k] += 
+            m_weight_correction_accumulations[i][j][k] * step;
+
+  for (int i = 0; i < m_biases.size(); i++)
+    for (int j = 0; j < m_biases[i].size(); j++)
+      m_biases[i][j] +=
+          m_bias_correction_accumulations[i][j] * step;
+
+  return cost;
 }
 
 
@@ -349,4 +402,15 @@ exportToFile(const std::string _file_name) const
       ofs << j << separator;
 
   return true;
+}
+
+double 
+NeuralNet::
+L1_derivation(double x, double regularization_rate)
+{
+  if (x < (-regularization_rate))
+    return (-regularization_rate);
+  if (x > regularization_rate)
+    return regularization_rate;
+  return 0.0;
 }

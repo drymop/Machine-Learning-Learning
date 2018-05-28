@@ -10,14 +10,17 @@ using namespace std;
 
 int main(int argc, char const *argv[])
 {
+  string load_file = "MNIST.model";
+  string save_file = "MNIST.model";
+
   // seed random number
   srand (time(0));
 
   MNISTParser parser;
   struct MNISTData data  = parser();
 
-  //NeuralNet net (vector<int>{28 * 28, 28, 10});
-  NeuralNet net("MNIST_step_0_01.model");
+  NeuralNet net (vector<int>{28 * 28, 28, 10});
+  //NeuralNet net(load_file);
 
   int num_epoch = 11;
   int batch_size = 128;
@@ -61,7 +64,7 @@ int main(int argc, char const *argv[])
       if (iter % 50 == 0)
       {
         cout << "Iter " << iter << ": " << cost << endl;
-        net.exportToFile("MNIST.model");
+        net.exportToFile(save_file);
       }
     }
 

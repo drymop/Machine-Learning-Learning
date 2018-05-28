@@ -23,11 +23,23 @@ class NeuralNet
 
     std::vector<double> predict(const std::vector<double>& _inputs);
 
+    /// @brief batch training
     double train(const std::vector<std::vector<double>>& _batch_inputs, 
                  const std::vector<std::vector<double>>& _batch_outputs, 
                  double _learning_rate = 0.01);
 
+    /// @brief online training
+    double train(const std::vector<double>& _inputs,
+                 const std::vector<double>& _outputs,
+                 double _learning_rate = 0.01,
+                 double _regularization_rate = 0.05);
+
     bool exportToFile(const std::string _file_name) const;
+
+    const std::vector<std::vector<std::vector<double>>>& weights() const
+    {
+      return m_weights;
+    }
 
   private:
     std::vector<int> m_layer_sizes;
@@ -62,14 +74,17 @@ class NeuralNet
     /// @}
     ////////////////////////////////////////////////////////////////////////////
 
+    void   feedFoward(const std::vector<double>& _inputs);
+
+    void   backPropagate(const std::vector<double>& _correct_outputs);
+
     /// Activation function - sigmoid
     double sigmoid(double x);
 
     double sigmoid_derivation(double sigmoid_x);
 
-    void   feedFoward(const std::vector<double>& _inputs);
+    double L1_derivation(double x, double regularization_rate);
 
-    void   backPropagate(const std::vector<double>& _correct_outputs);
 };
 
 #endif // NEURAL_NET_H_
