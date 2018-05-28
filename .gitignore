@@ -1,4 +1,3 @@
 *.o
 *.out
 *.exe
-MNIST_database/*
