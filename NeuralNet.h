@@ -83,6 +83,10 @@ class NeuralNet
 
     double sigmoid_derivation(double sigmoid_x);
 
+    double leakyRELU(double x);
+
+    double leakyRELU_derivation(double x);
+
     double L1_derivation(double x, double regularization_rate);
 
 };

@@ -19,8 +19,8 @@ int main(int argc, char const *argv[])
   MNISTParser parser;
   struct MNISTData data  = parser();
 
-  NeuralNet net (vector<int>{28 * 28, 28, 10});
-  //NeuralNet net(load_file);
+  //NeuralNet net (vector<int>{28 * 28, 28, 10});
+  NeuralNet net(load_file);
 
   int num_epoch = 11;
 
@@ -33,20 +33,14 @@ int main(int argc, char const *argv[])
     double prev_weight = 0;
     for (int i = 0; i < data.train_inputs.size(); i++)
     {
-      double cost = net.train(data.train_inputs[i], data.train_outputs[i], 0.1, 0.05);
-      if (std::isnan(cost))
-      {
-        cout << "IS NAN " << i << endl;
-        cout << "avg_cost " << avg_cost << endl;
-        cout << "prev_weight" << prev_weight << endl;
-      }
+      double cost = net.train(data.train_inputs[i], data.train_outputs[i], 0.01, 0.0001);
       avg_cost += cost;
-      prev_weight = net.weights()[0][0][0];
       
-      if (i % 1000 == 0)
+      if (i % 10000 == 0)
       {
-        avg_cost /= 1000;
-        cout << "Iter " << i << ": " << avg_cost <<" "<< net.weights()[0][0][0] << endl;
+        if (i)
+          avg_cost /= 10000.0;
+        cout << "Iter " << i << ": " << avg_cost << endl;
         avg_cost = 0;
         net.exportToFile(save_file);
       }

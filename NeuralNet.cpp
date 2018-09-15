@@ -229,7 +229,7 @@ train(const vector<double>& _inputs,
       double _regularization_rate)
 {
   double cost = 0;
-
+  
   // zero out the accumulations, add regularization
   for (int i = 0; i < m_weight_correction_accumulations.size(); i++)
     for (int j = 0; j < m_weight_correction_accumulations[i].size(); j++)
@@ -263,8 +263,10 @@ train(const vector<double>& _inputs,
   for (int i = 0; i < m_weights.size(); i++)
     for (int j = 0; j < m_weights[i].size(); j++)
       for (int k = 0; k < m_weights[i][j].size(); k++)
+      {
         m_weights[i][j][k] += 
             m_weight_correction_accumulations[i][j][k] * step;
+      }
 
   for (int i = 0; i < m_biases.size(); i++)
     for (int j = 0; j < m_biases[i].size(); j++)
@@ -374,6 +376,21 @@ sigmoid_derivation(double sigmoid_x)
 }
 
 
+double
+NeuralNet::
+leakyRELU(double x)
+{
+  return (x > 0)? x : (0.001 * x);
+}
+
+
+double leakyRELU_derivation(double x)
+{
+  return (x > 0)? 1 : 0.001;
+}
+
+
+
 bool
 NeuralNet::
 exportToFile(const std::string _file_name) const
@@ -408,9 +425,9 @@ double
 NeuralNet::
 L1_derivation(double x, double regularization_rate)
 {
-  if (x < (-regularization_rate))
-    return (-regularization_rate);
-  if (x > regularization_rate)
+  if (x == 0.0)
+    return 0;
+  if (x < 0)
     return regularization_rate;
-  return 0.0;
+  return (-regularization_rate);
 }
